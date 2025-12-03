@@ -1,7 +1,9 @@
 # ◼️ Blackbox
 ### The AI-Native Flight Recorder for Enterprise Security
 
-[![Build Status](https://github.com/kamisaberi/blackbox/actions/workflows/build.yml/badge.svg)](https://github.com/ignition-ai/blackbox/actions)
+<!-- [![Build Status](https://github.com/kamisaberi/blackbox/actions/workflows/build.yml/badge.svg)](https://github.com/ignition-ai/blackbox/actions) -->
+
+
 [![Version](https://img.shields.io/badge/version-0.1.0--alpha-blue)]()
 [![Stack](https://img.shields.io/badge/core-C%2B%2B20-00599C)]()
 [![Engine](https://img.shields.io/badge/inference-xInfer-orange)]()
