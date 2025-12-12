@@ -62,4 +62,6 @@ namespace blackbox::ingest {
         std::array<char, 65507> recv_buffer_; 
     };
 
-} // namespace blackbox::in
+} // namespace blackbox::ingest
+
+#endif // BLACKBOX_INGEST_UDP_SERVER_H
