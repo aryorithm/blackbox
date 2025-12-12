@@ -1,12 +1,97 @@
-services:
-  tower: # The Go API
-    image: blackbox-tower
-    ports:
-      - "8080:8080"  # Expose API port
-    environment:
-      - ALLOWED_ORIGINS=* # Crucial for CORS (see below)
+version: '3.8'
 
-  hud: # The React Dashboard
-    image: blackbox-hud
+services:
+  # -------------------------------------------------------
+  # 1. The Engine (C++)
+  # -------------------------------------------------------
+  core:
+    build:
+      context: ../../blackbox-core
+      dockerfile: docker/Dockerfile
+    image: blackbox-core:latest
+    container_name: blackbox-core
+    restart: always
+    privileged: true # Required for thread pinning & iptables
+    cap_add:
+      - NET_ADMIN  # For Active Defense (Blocking IPs)
+      - SYS_NICE   # For Real-time Thread Priority
     ports:
-      - "80:80"      # Expose Web Interface
+      - "514:514/udp" # Syslog UDP
+      - "601:601/tcp" # Syslog TCP
+      - "8081:8081"   # Admin/Metrics
+    environment:
+      - BLACKBOX_UDP_PORT=514
+      - BLACKBOX_CLICKHOUSE_URL=http://clickhouse:8123
+      - BLACKBOX_REDIS_HOST=redis
+    depends_on:
+      - clickhouse
+      - redis
+    volumes:
+      - ../../data/models:/app/models # Mount AI models
+      - ../../data/config:/app/config # Mount GeoIP & Rules
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # -------------------------------------------------------
+  # 2. The Control Tower (Go API)
+  # -------------------------------------------------------
+  tower:
+    build: ../../blackbox-tower
+    image: blackbox-tower:latest
+    container_name: blackbox-tower
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - TOWER_PORT=8080
+      - BLACKBOX_CLICKHOUSE_URL=tcp://clickhouse:9000
+      - BLACKBOX_REDIS_HOST=redis
+    depends_on:
+      - clickhouse
+      - redis
+
+  # -------------------------------------------------------
+  # 3. The HUD (React Frontend)
+  # -------------------------------------------------------
+  hud:
+    build: ../../blackbox-hud
+    image: blackbox-hud:latest
+    container_name: blackbox-hud
+    ports:
+      - "3000:80" # Maps Nginx port 80 to host 3000
+    depends_on:
+      - tower
+
+  # -------------------------------------------------------
+  # 4. The Vault (ClickHouse)
+  # -------------------------------------------------------
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    container_name: blackbox-db
+    ports:
+      - "8123:8123" # HTTP (for C++ Core)
+      - "9000:9000" # Native (for Go API)
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./database/clickhouse/schema:/docker-entrypoint-initdb.d
+
+  # -------------------------------------------------------
+  # 5. The Bus (Redis)
+  # -------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: blackbox-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  clickhouse_data:
