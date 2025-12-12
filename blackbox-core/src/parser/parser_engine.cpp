@@ -12,10 +12,10 @@ namespace blackbox::parser {
     // =========================================================
     // Constructor
     // =========================================================
-    ParserEngine::ParserEngine() {
-        // In the future: Load vocab.json here
-    }
-
+ParserEngine::ParserEngine() {
+    tokenizer_.load_vocabulary("config/vocab.txt");
+    scaler_.load_parameters("config/scaler_params.txt"); // Load params
+}
     // =========================================================
     // Helper: Extract Field (Move cursor forward)
     // =========================================================
