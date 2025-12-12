@@ -32,6 +32,11 @@ namespace blackbox::core {
             ring_buffer_ // UdpServer reads port from Settings internally or passed via ctor
         );
 
+        tcp_server_ = std::make_unique<ingest::TcpServer>(
+            *io_context_,
+            601,
+            ring_buffer_
+        );
         // 3. Setup Logic Engines
         try {
             // A. AI Brain (xInfer)
