@@ -1,9 +1,6 @@
 /**
  * @file settings.h
  * @brief Global Configuration Manager.
- * 
- * Centralizes all runtime settings (Ports, Paths, URLs).
- * Supports loading from Environment Variables for Docker/K8s compatibility.
  */
 
 #ifndef BLACKBOX_COMMON_SETTINGS_H
@@ -14,56 +11,57 @@
 
 namespace blackbox::common {
 
-    // Grouping settings by subsystem
     struct NetworkConfig {
         uint16_t udp_port = 514;
+        uint16_t admin_port = 8081;
         size_t ring_buffer_size = 65536;
     };
 
     struct AIConfig {
         std::string model_path = "models/autoencoder.plan";
+        std::string vocab_path = "config/vocab.txt";
+        std::string scaler_path = "config/scaler_params.txt";
         float anomaly_threshold = 0.8f;
         int batch_size = 32;
     };
 
+    struct EnrichmentConfig {
+        std::string geoip_db_path = "config/GeoLite2-City.mmdb";
+        std::string rules_config_path = "config/rules.yaml";
+    };
+
     struct DatabaseConfig {
+        // ClickHouse (Logs)
         std::string clickhouse_url = "http://localhost:8123";
         size_t flush_batch_size = 1000;
         int flush_interval_ms = 1000;
+
+        // Redis (Real-time Alerts)
+        std::string redis_host = "localhost";
+        int redis_port = 6379;
+        std::string redis_channel = "sentry_alerts";
     };
 
     class Settings {
     public:
-        // Delete copy constructors (Singleton)
         Settings(const Settings&) = delete;
         Settings& operator=(const Settings&) = delete;
 
-        /**
-         * @brief Get the global instance.
-         */
         static Settings& instance();
 
-        /**
-         * @brief Load settings from Environment Variables.
-         * 
-         * Looks for:
-         * - BLACKBOX_UDP_PORT
-         * - BLACKBOX_MODEL_PATH
-         * - BLACKBOX_CLICKHOUSE_URL
-         * - etc.
-         */
         void load_from_env();
 
-        // Accessors
         const NetworkConfig& network() const { return network_; }
         const AIConfig& ai() const { return ai_; }
+        const EnrichmentConfig& enrichment() const { return enrichment_; }
         const DatabaseConfig& db() const { return db_; }
 
     private:
-        Settings() = default; // Private constructor
+        Settings() = default;
 
         NetworkConfig network_;
         AIConfig ai_;
+        EnrichmentConfig enrichment_;
         DatabaseConfig db_;
     };
 
