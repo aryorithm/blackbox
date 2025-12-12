@@ -84,6 +84,12 @@ ParserEngine::ParserEngine() {
         // 3. Vectorize (Prepare for AI)
         vectorize_text(output.message, output.embedding_vector);
 
+        // TODO AFTER NW CODE
+        // tokenizer_.encode(output.message, output.embedding_vector);
+        // // 2. Scale (Normalize to 0.0 - 1.0)
+        // scaler_.transform(output.embedding_vector);
+
+
         return output;
     }
 
